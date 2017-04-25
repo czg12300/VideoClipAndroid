@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">录像</string>
+    <item name="anim_time" type="integer">300</item>
+</resources>
