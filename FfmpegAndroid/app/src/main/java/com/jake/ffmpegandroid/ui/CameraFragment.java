@@ -51,7 +51,7 @@ public class CameraFragment extends BaseWorkerFragment {
         mBtnCamera.setOnClickListener(onClickListener);
         mBtnToggle.setOnClickListener(onClickListener);
         mCameraHolder = new GlCameraHolder(mGlPreview);
-        mCameraHolder.setPreviewCallback(previewCallback);
+//        mCameraHolder.setPreviewCallback(previewCallback);
     }
 
     long lastTime;
@@ -82,7 +82,7 @@ public class CameraFragment extends BaseWorkerFragment {
                     mBtnCamera.setSelected(true);
                 }
             } else if (v == mBtnToggle) {
-                mCameraHolder.toggleCamera();
+//                mCameraHolder.toggleCamera();
             }
         }
     };

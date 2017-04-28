@@ -170,6 +170,18 @@ public abstract class BaseCameraHolder {
         if (mCameraParameters.isZoomSupported()) {
             mCameraParameters.setZoom(mCameraZoom);
         }
+        List<int[]> fpsList = mCameraParameters.getSupportedPreviewFpsRange();
+        if (fpsList!=null&&fpsList.size()>0) {
+            int[] range = {0, 0};
+            for (int[] num : fpsList) {
+                if (num[0] > range[0]) {
+                    range[0] = num[0];
+                    range[1] = num[1];
+                    LogUtil.d("fpsList " + num[0] + " : " + num[1]);
+                }
+            }
+            mCameraParameters.setPreviewFpsRange(range[0], range[1]);
+        }
         mCamera.setParameters(mCameraParameters);
         mCamera.setDisplayOrientation(displayDegree);
         if (mPreviewCallback != null) {
@@ -186,6 +198,7 @@ public abstract class BaseCameraHolder {
 
         }
         setCameraPreviewDisplay(mCamera);
+        changeZoom(0);
     }
 
     private void notifyCameraOpened() {
@@ -333,25 +346,7 @@ public abstract class BaseCameraHolder {
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
             List<Camera.Size> preSizes = parameters.getSupportedPreviewSizes();
-            for (Camera.Size size : preSizes) {
-                LogUtil.d("size " + size.width + " : " + size.height);
-            }
-            int[] range = {0, 0};
-            List<int[]> fpsList = parameters.getSupportedPreviewFpsRange();
-            for (int[] num : fpsList) {
-                if (num[0] > range[0]) {
-                    int temp=num[0];
-                    if(num[1]>temp){
-                       temp= num[1];
-                    }
-                    range[0] =temp;
-                    range[1] = temp;
-                    LogUtil.d("size " + temp + " : " + temp);
-                }
-            }
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            parameters.setRecordingHint(true);//去掉这句，12fps
-            parameters.setPreviewFpsRange(range[0], range[1]);
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             Camera.Size largeSize = getLargeSize(preSizes, mDefaultPreviewWidth, mDefaultPreviewHeight);
             parameters.setPreviewSize(largeSize.width, largeSize.height);
             List<Camera.Size> pictureSizes = parameters.getSupportedPictureSizes();

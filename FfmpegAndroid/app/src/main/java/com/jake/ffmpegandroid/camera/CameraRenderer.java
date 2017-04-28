@@ -113,9 +113,10 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
 //                mGLSurfaceView.post(new Runnable() {
 //                    @Override
 //                    public void run() {
-                        if (mOnRendererListener != null) {
-                            mOnRendererListener.openRendererCamera();
-                        }
+
+                if (mOnRendererListener != null) {
+                    mOnRendererListener.openRendererCamera(mSurfaceTexture);
+                }
 //                    }
 //                });
 
@@ -141,22 +142,22 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         if (mFilter == null) {
             mCameraInputFilter.onDrawFrame(mTextureId, mGLCubeBuffer, mGLTextureBuffer);
         } else {
-//            id = mCameraInputFilter.onDrawToTexture(mTextureId);
+            id = mCameraInputFilter.onDrawToTexture(mTextureId);
             mFilter.onDrawFrame(id, mGLCubeBuffer, mGLTextureBuffer);
         }
     }
 
-    public void updateRotation(int orientation, Camera.Size size, boolean isFacingFront) {
-        orientation += 270;
+    public void updateRotation(int orientation, int width, int height, boolean isFacingFront) {
+        orientation += 180;
         if (isFacingFront) {
             orientation = (360 - orientation) % 360;
         }
         if (orientation == 90 || orientation == 270) {
-            mImageWidth = size.height;
-            mImageHeight = size.width;
+            mImageWidth = height;
+            mImageHeight = width;
         } else {
-            mImageWidth = size.width;
-            mImageHeight = size.height;
+            mImageWidth = width;
+            mImageHeight = height;
         }
         mCameraInputFilter.onInputSizeChanged(mImageWidth, mImageHeight);
         float[] textureCords = TextureRotationUtil.getRotation(Rotation.fromInt(orientation),
@@ -165,9 +166,20 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         mGLTextureBuffer.put(textureCords).position(0);
     }
 
+    long lastTime;
+    int frameRate = 0;
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        long now = System.currentTimeMillis();
+        if (now - lastTime > 1000) {
+            lastTime = now;
+            LogUtil.d("当前帧率：" + frameRate);
+
+            frameRate = 1;
+        } else {
+            frameRate++;
+        }
         checkIsMainThread();
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
@@ -254,6 +266,6 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     }
 
     public static interface OnRendererListener {
-        void openRendererCamera();
+        void openRendererCamera(SurfaceTexture surfaceTexture);
     }
 }
