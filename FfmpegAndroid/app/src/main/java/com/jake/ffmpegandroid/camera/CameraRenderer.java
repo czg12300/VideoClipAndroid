@@ -5,6 +5,7 @@ import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Looper;
+import android.view.Surface;
 
 
 import com.jake.ffmpegandroid.common.LogUtil;
@@ -147,21 +148,22 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    public void updateRotation(int orientation, int width, int height, boolean isFacingFront) {
-        orientation += 180;
-        if (isFacingFront) {
-            orientation = (360 - orientation) % 360;
-        }
-        if (orientation == 90 || orientation == 270) {
-            mImageWidth = height;
-            mImageHeight = width;
-        } else {
-            mImageWidth = width;
-            mImageHeight = height;
-        }
+    public void updateSize(int width, int height) {
+        mImageWidth = width;
+        mImageHeight = height;
         mCameraInputFilter.onInputSizeChanged(mImageWidth, mImageHeight);
-        float[] textureCords = TextureRotationUtil.getRotation(Rotation.fromInt(orientation),
-                true, false);
+        onFilterChanged();
+    }
+
+    public void updateRotation(int orientation, boolean isFacingFront) {
+        LogUtil.d("displayDegree updateRotation=" + orientation);
+        if (isFacingFront) {
+            if (orientation == 270) {
+                orientation = 90;
+            }
+            orientation = (360 - orientation) % 360;  // compensate the mirror
+        }
+        float[] textureCords = TextureRotationUtil.getRotation(Rotation.fromInt(orientation), true, false);
         mGLTextureBuffer.clear();
         mGLTextureBuffer.put(textureCords).position(0);
     }

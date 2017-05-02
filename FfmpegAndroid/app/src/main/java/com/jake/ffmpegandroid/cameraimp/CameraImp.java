@@ -68,9 +68,6 @@ public interface CameraImp {
 
     void closeFlashLight();
 
-    void setDisplayOrientation(int displayOrientation);
-
-    int getCameraDisplayOrientation();
 
     public static class CameraImpParametersBuilder {
         private CameraImpParameters parameters;

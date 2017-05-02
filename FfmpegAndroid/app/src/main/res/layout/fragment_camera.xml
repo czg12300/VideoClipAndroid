@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:background="@color/colorPrimaryDark"
     android:layout_height="match_parent">
 
     <android.opengl.GLSurfaceView
@@ -12,7 +13,8 @@
         android:id="@+id/tv_frame_rate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"
         android:background="#a0000000"
         android:padding="15dp"
         android:textColor="#ffffff"
@@ -38,4 +40,14 @@
         android:layout_marginRight="30dp"
         android:background="@color/colorAccent"
         android:src="@android:drawable/ic_menu_always_landscape_portrait" />
+    <ImageView
+        android:id="@+id/btn_flash"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginBottom="60dp"
+        android:layout_marginLeft="30dp"
+        android:background="@color/colorAccent"
+        android:src="@android:drawable/ic_lock_power_off" />
 </RelativeLayout>

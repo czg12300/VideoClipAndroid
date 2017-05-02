@@ -39,7 +39,6 @@ public class Camera1 implements CameraImp {
     private Size mPictureSize = new Size(720, 1280);
     private int pictureFormat = ImageFormat.JPEG;
     private int previewFormat = ImageFormat.NV21;
-    private int mDisplayOrientation;
     private PictureCallback mPictureCallback;
     private PreviewCallback mPreviewCallback;
     private CameraImpCallback mCameraImpCallback;
@@ -119,7 +118,7 @@ public class Camera1 implements CameraImp {
                 return;
             }
         }
-        mCamera.setDisplayOrientation(getCameraDisplayOrientation());
+//        mCamera.setDisplayOrientation(getCameraDisplayOrientation());
         mCamera.addCallbackBuffer(new byte[mPreviewSize.width * mPreviewSize.height * 3 / 2]);
         mCamera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
             @Override
@@ -168,34 +167,6 @@ public class Camera1 implements CameraImp {
         mCamera.setParameters(parameters);
     }
 
-    @Override
-    public int getCameraDisplayOrientation() {
-        Camera.CameraInfo info = new Camera.CameraInfo();
-        Camera.getCameraInfo(mCurrentCameraId, info);
-        int degrees = 0;
-        switch (mDisplayOrientation) {
-            case Surface.ROTATION_0:
-                degrees = 0;
-                break;
-            case Surface.ROTATION_90:
-                degrees = 90;
-                break;
-            case Surface.ROTATION_180:
-                degrees = 180;
-                break;
-            case Surface.ROTATION_270:
-                degrees = 270;
-                break;
-        }
-        int displayDegree;
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            displayDegree = (info.orientation + degrees) % 360;
-            displayDegree = (360 - displayDegree) % 360;  // compensate the mirror
-        } else {
-            displayDegree = (info.orientation - degrees + 360) % 360;
-        }
-        return displayDegree;
-    }
 
     @Override
     public void takePicture() {
@@ -230,9 +201,9 @@ public class Camera1 implements CameraImp {
     @Override
     public void toggleCamera() {
         if (mCurrentCameraId == CAMERA_ID_FRONT) {
-            openFrontCamera();
-        } else {
             openBackCamera();
+        } else {
+            openFrontCamera();
         }
     }
 
@@ -382,11 +353,6 @@ public class Camera1 implements CameraImp {
             parameter.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
             mCamera.setParameters(parameter);
         }
-    }
-
-    @Override
-    public void setDisplayOrientation(int displayOrientation) {
-        mDisplayOrientation = displayOrientation;
     }
 
     @Override

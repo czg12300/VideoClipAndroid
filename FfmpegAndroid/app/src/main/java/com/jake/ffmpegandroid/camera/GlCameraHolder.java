@@ -6,10 +6,12 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLSurfaceView;
 import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.ViewGroup;
 
 import com.jake.ffmpegandroid.cameraimp.CameraImp;
 import com.jake.ffmpegandroid.cameraimp.CameraImpFactory;
+import com.jake.ffmpegandroid.cameraimp.CameraUtils;
 import com.jake.ffmpegandroid.common.LogUtil;
 import com.jake.ffmpegandroid.gpuimage.FilterFactory;
 import com.jake.ffmpegandroid.gpuimage.FilterType;
@@ -24,71 +26,87 @@ public class GlCameraHolder {
     private CameraImp mCameraImp;
     private int mOrientation;
     private GLSurfaceView mGLSurfaceView;
-    private OrientationEventListener orientationEventListener;
 
     public GlCameraHolder(GLSurfaceView glSurfaceView) {
         mGLSurfaceView = glSurfaceView;
         mCameraImp = CameraImpFactory.getCameraImp(glSurfaceView.getContext());
         mCameraImp.setParameters(CameraImp.CameraImpParametersBuilder.create()
                 .setPictureSize(new CameraImp.Size(1080, 1920))
-                .setPreviewSize(new CameraImp.Size(720, 1280))
+                .setPreviewSize(new CameraImp.Size(640, 480))
                 .setPictureFormat(ImageFormat.JPEG)
                 .setPreviewFormat(ImageFormat.NV21)
                 .build());
-        mOrientation = Configuration.ORIENTATION_PORTRAIT;
-        mCameraImp.setDisplayOrientation(mOrientation);
+        mOrientation = Surface.ROTATION_0;
+        mCameraImp.setCameraImpCallback(cameraImpCallback);
         mCameraRenderer = new CameraRenderer(glSurfaceView, onRendererListener);
         mCameraRenderer.setFilter(FilterFactory.getFilter(FilterType.BEAUTY, glSurfaceView.getContext()));
-        orientationEventListener = new OrientationEventListener(mGLSurfaceView.getContext()) {
-            @Override
-            public void onOrientationChanged(int orientation) {
-                mOrientation = orientation;
-            }
-        };
-        orientationEventListener.enable();
 
+    }
+
+    public void setPreviewCallback(CameraImp.PreviewCallback callback) {
+        mCameraImp.setPreviewCallback(callback);
+    }
+
+    public CameraImp getCameraImp() {
+        return mCameraImp;
+    }
+
+    private CameraImp.CameraImpCallback cameraImpCallback = new CameraImp.CameraImpCallback() {
+        @Override
+        public void onCameraOpened(final CameraImp cameraImp, final int width, final int height) {
+            LogUtil.d("width:height =" + width + ":" + height);
+            mGLSurfaceView.post(new Runnable() {
+                @Override
+                public void run() {
+                    int sw = mGLSurfaceView.getResources().getDisplayMetrics().widthPixels;
+                    int sh = mGLSurfaceView.getResources().getDisplayMetrics().widthPixels;
+                    int glWidth, glHeight;
+//                            if (mOrientation == Surface.ROTATION_90 || mOrientation == Surface.ROTATION_270) {
+//                                glWidth = sh;
+//                                glHeight = sh * height / width;
+//                            } else {
+                    glWidth = sw;
+                    if (width > height) {
+                        glHeight = sw * width / height;
+                    } else {
+                        glHeight = sw * height / width;
+                    }
+//                            }
+                    LogUtil.d("width:height =" + glWidth + ":" + glHeight);
+                    ViewGroup.LayoutParams lp = mGLSurfaceView.getLayoutParams();
+                    lp.width = glWidth;
+                    lp.height = glHeight;
+                    mCameraRenderer.updateRotation(CameraUtils.getDegreesByOrientation(mOrientation), cameraImp.isFacingFront());
+                    mGLSurfaceView.setLayoutParams(lp);
+                    mCameraRenderer.updateSize(glWidth, glHeight);
+
+                }
+            });
+            onResume();
+        }
+
+        @Override
+        public void onCameraClosed() {
+
+        }
+    };
+
+    public void onConfigChange(int orientation) {
+        mOrientation = orientation;
+        mCameraRenderer.updateRotation(CameraUtils.getDegreesByOrientation(orientation), mCameraImp.isFacingFront());
+
+    }
+
+    public void toggleCamera() {
+        mCameraImp.toggleCamera();
     }
 
     private CameraRenderer.OnRendererListener onRendererListener = new CameraRenderer.OnRendererListener() {
         @Override
         public void openRendererCamera(SurfaceTexture texture) {
             mCameraImp.setDisplay(texture);
+
             mCameraImp.openBackCamera();
-            mCameraImp.setCameraImpCallback(new CameraImp.CameraImpCallback() {
-                @Override
-                public void onCameraOpened(final CameraImp cameraImp, final int width, final int height) {
-                    LogUtil.d("width:height =" + width + ":" + height);
-                    mGLSurfaceView.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            int sw = mGLSurfaceView.getResources().getDisplayMetrics().widthPixels;
-                            ViewGroup.LayoutParams lp = mGLSurfaceView.getLayoutParams();
-                            lp.width = width;
-                            lp.height = height;
-//                            if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
-//                                lp.height = sw * height / width;
-//                            } else {
-//                                if (width > height) {
-//                                    lp.height = sw * width / height;
-//                                } else {
-//                                    lp.height = sw * height / width;
-//                                }
-//                            }
-                            LogUtil.d("width:height =" + lp.width + ":" + lp.height );
-                            mGLSurfaceView.setLayoutParams(lp);
-                        }
-                    });
-
-                    onResume();
-                    mCameraRenderer.updateRotation(cameraImp.getCameraDisplayOrientation(), width, height, cameraImp.isFacingFront());
-                }
-
-                @Override
-                public void onCameraClosed() {
-
-                }
-            });
-
 
         }
     };
@@ -104,6 +122,6 @@ public class GlCameraHolder {
     }
 
     public void onDestroy() {
-        orientationEventListener.disable();
+//        orientationEventListener.disable();
     }
 }

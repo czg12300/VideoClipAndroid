@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -24,7 +23,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.text.TextUtils;
-import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
@@ -60,12 +58,11 @@ public class Camera2 implements CameraImp {
     private SurfaceHolder mPreviewSurfaceHolder;
     private boolean hasAvailableCamera = false;
     private String mCurrentCameraId;
-    private Size mPreviewSize = new Size(720, 1280);
-    private Size mPictureSize = new Size(720, 1280);
+    private volatile Size mPreviewSize = new Size(720, 1280);
+    private volatile Size mPictureSize = new Size(720, 1280);
     private int pictureFormat = ImageFormat.JPEG;
     private int previewFormat = ImageFormat.NV21;
     private Context mAppContext;
-    private int mDisplayOrientation;
 
     public Camera2(Context context) {
         mAppContext = context.getApplicationContext();
@@ -74,14 +71,14 @@ public class Camera2 implements CameraImp {
         works.start();
         mThreadHandler = new Handler(works.getLooper());
         try {
-            init();
+            initCameraId();
         } catch (CameraAccessException e) {
             e.printStackTrace();
             hasAvailableCamera = false;
         }
     }
 
-    private void init() throws CameraAccessException {
+    private void initCameraId() throws CameraAccessException {
         String[] ids = mCameraManager.getCameraIdList();
         if (ids != null && ids.length > 0) {
             hasAvailableCamera = true;
@@ -141,9 +138,9 @@ public class Camera2 implements CameraImp {
         CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCurrentCameraId);
         StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         if (map != null) {
-            List<Size> previewSizes = CameraUtils.transArrayToList(map.getOutputSizes(SurfaceTexture.class));
+            List<Size> previewSizes = CameraUtils.transArrayToList(map.getOutputSizes(previewFormat));
             mPreviewSize = CameraUtils.getLargeSize(previewSizes, mPreviewSize.width, mPreviewSize.height);
-            List<Size> pictureSizes = CameraUtils.transArrayToList(map.getOutputSizes(SurfaceTexture.class));
+            List<Size> pictureSizes = CameraUtils.transArrayToList(map.getOutputSizes(pictureFormat));
             mPictureSize = CameraUtils.getLargeSize(pictureSizes, mPictureSize.width, mPictureSize.height);
         }
         List<Surface> surfaceList = new ArrayList<>();
@@ -177,9 +174,14 @@ public class Camera2 implements CameraImp {
             mDevice.createCaptureSession(surfaceList, mCaptureSessionStateCallback, mThreadHandler);
         }
         int sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        mPreviewBuilder.set(CaptureRequest.JPEG_ORIENTATION,getCameraDisplayOrientation());
+//        mPreviewBuilder.set(CaptureRequest.JPEG_ORIENTATION, getCameraDisplayOrientation());
 //        mPreviewBuilder.set(CaptureRequest.JPEG_ORIENTATION, (sensorOrientation + getCameraDisplayOrientation() * (isFacingFront() ? 1 : -1) + 360) % 360);
-        mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, mPreviewBuilder.get(CaptureRequest.CONTROL_AF_MODE));
+//        mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+//        mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_ON);
+//        mPreviewBuilder.set(CaptureRequest.FLASH_MODE,
+//                CaptureRequest.FLASH_MODE_OFF);
     }
 
     private CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
@@ -245,9 +247,9 @@ public class Camera2 implements CameraImp {
     @Override
     public void toggleCamera() {
         if (TextUtils.equals(mCurrentCameraId, CAMERA_ID_FRONT)) {
-            openFrontCamera();
-        } else {
             openBackCamera();
+        } else {
+            openFrontCamera();
         }
     }
 
@@ -444,11 +446,6 @@ public class Camera2 implements CameraImp {
         }
     }
 
-    @Override
-    public void setDisplayOrientation(int displayOrientation) {
-        mDisplayOrientation = displayOrientation;
-    }
-
     private int getSensorOrientation() {
         int ret = 0;
         try {
@@ -461,35 +458,6 @@ public class Camera2 implements CameraImp {
         }
 
         return ret;
-    }
-
-    @Override
-    public int getCameraDisplayOrientation() {
-        int degrees = 0;
-        switch (mDisplayOrientation) {
-            case Surface.ROTATION_0:
-                degrees = 90;
-                break;
-            case Surface.ROTATION_90:
-                degrees = 0;
-                break;
-            case Surface.ROTATION_180:
-                degrees = 270;
-                break;
-            case Surface.ROTATION_270:
-                degrees = 180;
-                break;
-        }
-        int displayDegree;
-        if (isFacingFront()) {
-            displayDegree = degrees % 360;
-            displayDegree = (360 - displayDegree) % 360;  // compensate the mirror
-        } else {
-            displayDegree=degrees;
-//            displayDegree = (360 - degrees) % 360;
-        }
-        LogUtil.d("displayDegree"+displayDegree);
-        return displayDegree;
     }
 
     @Override

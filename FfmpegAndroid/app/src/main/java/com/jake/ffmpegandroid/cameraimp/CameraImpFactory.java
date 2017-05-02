@@ -17,7 +17,8 @@ public final class CameraImpFactory {
 
     public static final CameraImp getCameraImp(Context context) {
         CameraImp cameraImp = null;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             cameraImp = new Camera1(context);
         } else {
             cameraImp = new Camera2(context);

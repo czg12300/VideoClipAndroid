@@ -5,11 +5,13 @@ import android.hardware.Camera;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.view.Surface;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.jake.ffmpegandroid.cameraimp.CameraImp.Size;
+import com.jake.ffmpegandroid.common.LogUtil;
 
 /**
  * 一些camera相关的简单的工具
@@ -19,6 +21,26 @@ import com.jake.ffmpegandroid.cameraimp.CameraImp.Size;
  */
 
 public final class CameraUtils {
+    public static int getDegreesByOrientation(int orientation) {
+        LogUtil.d("orientation="+orientation);
+        int degrees = 0;
+        switch (orientation) {
+            case Surface.ROTATION_0:
+                degrees = 270;
+                break;
+            case Surface.ROTATION_90:
+                degrees = 180;
+                break;
+            case Surface.ROTATION_180:
+                degrees = 90;
+                break;
+            case Surface.ROTATION_270:
+                degrees = 0;
+                break;
+        }
+        return degrees;
+    }
+
     public static Size getLargeSize(List<Size> list, int width, int height) {
         if (list == null || list.size() == 0) {
             return new Size(width, height);

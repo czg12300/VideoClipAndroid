@@ -30,7 +30,7 @@
         <activity
             android:name=".common.ContainerActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="sensor" />
     </application>
 
 </manifest>

@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
+        JumpUtils.startFragment(tv.getContext(), CameraFragment.class);
     }
 
     private View.OnClickListener onClickListener = new View.OnClickListener() {
