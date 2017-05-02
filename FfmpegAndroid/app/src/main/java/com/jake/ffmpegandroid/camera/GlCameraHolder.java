@@ -34,7 +34,7 @@ public class GlCameraHolder {
                 .setPictureSize(new CameraImp.Size(1080, 1920))
                 .setPreviewSize(new CameraImp.Size(640, 480))
                 .setPictureFormat(ImageFormat.JPEG)
-                .setPreviewFormat(ImageFormat.NV21)
+                .setPreviewFormat(ImageFormat.YV12)
                 .build());
         mOrientation = Surface.ROTATION_0;
         mCameraImp.setCameraImpCallback(cameraImpCallback);
@@ -76,7 +76,7 @@ public class GlCameraHolder {
                     ViewGroup.LayoutParams lp = mGLSurfaceView.getLayoutParams();
                     lp.width = glWidth;
                     lp.height = glHeight;
-                    mCameraRenderer.updateRotation(CameraUtils.getDegreesByOrientation(mOrientation), cameraImp.isFacingFront());
+                    mCameraRenderer.updateRotation(CameraUtils.getDegreesByOrientation(mOrientation, cameraImp), cameraImp.isFacingFront());
                     mGLSurfaceView.setLayoutParams(lp);
                     mCameraRenderer.updateSize(glWidth, glHeight);
 
@@ -93,7 +93,7 @@ public class GlCameraHolder {
 
     public void onConfigChange(int orientation) {
         mOrientation = orientation;
-        mCameraRenderer.updateRotation(CameraUtils.getDegreesByOrientation(orientation), mCameraImp.isFacingFront());
+        mCameraRenderer.updateRotation(CameraUtils.getDegreesByOrientation(orientation, mCameraImp), mCameraImp.isFacingFront());
 
     }
 

@@ -2,6 +2,7 @@ package com.jake.ffmpegandroid.cameraimp;
 
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.system.Os;
 
 /**
@@ -12,13 +13,15 @@ import android.system.Os;
  */
 
 public final class CameraImpFactory {
+    static boolean useCamera2 = true;
+
     private CameraImpFactory() {
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public static final CameraImp getCameraImp(Context context) {
         CameraImp cameraImp = null;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP||!useCamera2) {
             cameraImp = new Camera1(context);
         } else {
             cameraImp = new Camera2(context);

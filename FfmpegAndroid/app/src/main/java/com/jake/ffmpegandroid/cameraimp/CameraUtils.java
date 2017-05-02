@@ -21,25 +21,43 @@ import com.jake.ffmpegandroid.common.LogUtil;
  */
 
 public final class CameraUtils {
-    public static int getDegreesByOrientation(int orientation) {
-        LogUtil.d("orientation="+orientation);
+    public static int getDegreesByOrientation(int orientation, CameraImp cameraImp) {
+        LogUtil.d("orientation=" + orientation);
         int degrees = 0;
-        switch (orientation) {
-            case Surface.ROTATION_0:
-                degrees = 270;
-                break;
-            case Surface.ROTATION_90:
-                degrees = 180;
-                break;
-            case Surface.ROTATION_180:
-                degrees = 90;
-                break;
-            case Surface.ROTATION_270:
-                degrees = 0;
-                break;
+        if (cameraImp instanceof Camera2) {
+            switch (orientation) {
+                case Surface.ROTATION_0:
+                    degrees = 270;
+                    break;
+                case Surface.ROTATION_90:
+                    degrees = 180;
+                    break;
+                case Surface.ROTATION_180:
+                    degrees = 90;
+                    break;
+                case Surface.ROTATION_270:
+                    degrees = 0;
+                    break;
+            }
+        } else if (cameraImp instanceof Camera1) {
+            switch (orientation) {
+                case Surface.ROTATION_0:
+                    degrees = 270;
+                    break;
+                case Surface.ROTATION_90:
+                    degrees = 180;
+                    break;
+                case Surface.ROTATION_180:
+                    degrees = 90;
+                    break;
+                case Surface.ROTATION_270:
+                    degrees = 0;
+                    break;
+            }
         }
         return degrees;
     }
+
 
     public static Size getLargeSize(List<Size> list, int width, int height) {
         if (list == null || list.size() == 0) {

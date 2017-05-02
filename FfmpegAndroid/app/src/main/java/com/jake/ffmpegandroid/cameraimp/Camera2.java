@@ -19,6 +19,7 @@ import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -31,6 +32,8 @@ import com.jake.ffmpegandroid.common.LogUtil;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 使用camera2 api
@@ -61,15 +64,14 @@ public class Camera2 implements CameraImp {
     private volatile Size mPreviewSize = new Size(720, 1280);
     private volatile Size mPictureSize = new Size(720, 1280);
     private int pictureFormat = ImageFormat.JPEG;
-    private int previewFormat = ImageFormat.NV21;
+    private int previewFormat = ImageFormat.YV12;
     private Context mAppContext;
+    private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
     public Camera2(Context context) {
         mAppContext = context.getApplicationContext();
         mCameraManager = (CameraManager) mAppContext.getSystemService(Context.CAMERA_SERVICE);
-        HandlerThread works = new HandlerThread("Camera2");
-        works.start();
-        mThreadHandler = new Handler(works.getLooper());
+        mThreadHandler = new Handler(Looper.myLooper());
         try {
             initCameraId();
         } catch (CameraAccessException e) {
@@ -104,12 +106,12 @@ public class Camera2 implements CameraImp {
         return this;
     }
 
-    //    private Semaphore mCameraOpenCloseLock = new Semaphore(1);
     private CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
             mDevice = cameraDevice;
+            mCameraOpenCloseLock.release();
             try {
                 updateCameraParameters();
             } catch (CameraAccessException e) {
@@ -119,6 +121,7 @@ public class Camera2 implements CameraImp {
 
         @Override
         public void onDisconnected(CameraDevice cameraDevice) {
+            mCameraOpenCloseLock.release();
             cameraDevice.close();
             mDevice = null;
             if (mCameraImpCallback != null) {
@@ -128,6 +131,7 @@ public class Camera2 implements CameraImp {
 
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
+            mCameraOpenCloseLock.release();
             cameraDevice.close();
             mDevice = null;
         }
@@ -146,6 +150,7 @@ public class Camera2 implements CameraImp {
         List<Surface> surfaceList = new ArrayList<>();
         mPreviewBuilder = mDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
         if (mPreviewSurfaceTexture != null) {
+            mPreviewSurfaceTexture.setDefaultBufferSize(mPreviewSize.width, mPreviewSize.height);
             Surface textureSurface = new Surface(mPreviewSurfaceTexture);
             surfaceList.add(textureSurface);
             mPreviewBuilder.addTarget(textureSurface);
@@ -170,26 +175,29 @@ public class Camera2 implements CameraImp {
             mPreviewBuilder.addTarget(mPreviewImageReader.getSurface());
             surfaceList.add(mPreviewImageReader.getSurface());
         }
+        setZoom(0);
+        updateAutoFocus(characteristics);
         if (surfaceList != null) {
             mDevice.createCaptureSession(surfaceList, mCaptureSessionStateCallback, mThreadHandler);
         }
-        int sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-//        mPreviewBuilder.set(CaptureRequest.JPEG_ORIENTATION, getCameraDisplayOrientation());
-//        mPreviewBuilder.set(CaptureRequest.JPEG_ORIENTATION, (sensorOrientation + getCameraDisplayOrientation() * (isFacingFront() ? 1 : -1) + 360) % 360);
-//        mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
-//        mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.CONTROL_AE_MODE_ON);
-//        mPreviewBuilder.set(CaptureRequest.FLASH_MODE,
-//                CaptureRequest.FLASH_MODE_OFF);
+
+    }
+
+    private void updateAutoFocus(CameraCharacteristics characteristics) {
+        int[] modes = characteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+        // Auto focus is not supported
+        if (modes == null || modes.length == 0 || (modes.length == 1 && modes[0] == CameraCharacteristics.CONTROL_AF_MODE_OFF)) {
+            mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+        } else {
+            mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+        }
     }
 
     private CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
         @Override
         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
             super.onCaptureCompleted(session, request, result);
-
-            //TODO
+            //TODO 功能扩展
         }
     };
     CameraCaptureSession.StateCallback mCaptureSessionStateCallback = new CameraCaptureSession.StateCallback() {
@@ -261,9 +269,15 @@ public class Camera2 implements CameraImp {
             LogUtil.e("没有照相机权限");
             return;
         }
+        stopCamera();
         try {
+            if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
+                throw new RuntimeException("Time out waiting to lock camera opening.");
+            }
             mCameraManager.openCamera(mCurrentCameraId, mStateCallback, mThreadHandler);
         } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -298,9 +312,7 @@ public class Camera2 implements CameraImp {
         if (!isCameraOpen()) {
             return;
         }
-
         try {
-//            mCameraCaptureSession.capture(mPreviewBuilder.build(), mCaptureCallback, mThreadHandler);
             if (mCameraCaptureSession != null && mPreviewBuilder != null) {
                 mCameraCaptureSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mThreadHandler);
             }
@@ -321,11 +333,14 @@ public class Camera2 implements CameraImp {
         }
     }
 
-    @Override
-    public void release() {
-        if (mThreadHandler != null) {
-            mThreadHandler.getLooper().quit();
-            mThreadHandler = null;
+    private void stopCamera() {
+        if (mCameraCaptureSession != null) {
+            mCameraCaptureSession.close();
+            mCameraCaptureSession = null;
+        }
+        if (mDevice != null) {
+            mDevice.close();
+            mDevice = null;
         }
         if (mPictureImageReader != null) {
             mPictureImageReader.close();
@@ -335,6 +350,11 @@ public class Camera2 implements CameraImp {
             mPreviewImageReader.close();
             mPreviewImageReader = null;
         }
+    }
+
+    @Override
+    public void release() {
+        stopCamera();
     }
 
     @Override
@@ -369,6 +389,7 @@ public class Camera2 implements CameraImp {
                     mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
                     mPreviewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, Integer.valueOf(zoom).floatValue());
                 }
+                updateAutoFocus(characteristics);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
@@ -432,8 +453,8 @@ public class Camera2 implements CameraImp {
     @Override
     public void openFlashLight() {
         if (mPreviewBuilder != null) {
-            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
-            mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            startPreview();
         }
 
     }
@@ -441,24 +462,11 @@ public class Camera2 implements CameraImp {
     @Override
     public void closeFlashLight() {
         if (mPreviewBuilder != null) {
-            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            startPreview();
         }
     }
 
-    private int getSensorOrientation() {
-        int ret = 0;
-        try {
-            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCurrentCameraId);
-            if (characteristics != null) {
-                ret = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-            }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-
-        return ret;
-    }
 
     @Override
     public void setPictureCallback(PictureCallback pictureCallback) {

@@ -18,10 +18,16 @@ public interface CameraImp {
         void onCameraClosed();
     }
 
+    /**
+     * 预览帧回调，结果可能不在主线程
+     */
     interface PreviewCallback {
         void onPreviewFrame(byte[] data, int width, int height, CameraImp cameraImp);
     }
 
+    /**
+     * 照片帧回调，结果可能不在主线程
+     */
     interface PictureCallback {
         void onPictureFrame(byte[] data, int width, int height, CameraImp cameraImp);
     }

@@ -73,7 +73,13 @@ public class CameraFragment extends BaseWorkerFragment {
             long now = System.currentTimeMillis();
             if (now - lastTime > 1000) {
                 lastTime = now;
-                mTvFrameRate.setText("帧率：" + frameRate);
+//                mTvFrameRate.post(new Runnable() {
+//                    @Override
+//                    public void run() {
+                        mTvFrameRate.setText("帧率：" + frameRate);
+//                    }
+//                });
+
                 LogUtil.d("onPreviewFrame frame rate=" + frameRate + "data len=" + data.length + " width=" + width + " height=" + height);
                 frameRate = 1;
             } else {
