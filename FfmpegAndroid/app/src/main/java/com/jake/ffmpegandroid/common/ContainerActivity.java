@@ -98,7 +98,7 @@ public class ContainerActivity extends AppCompatActivity {
     }
 
     public static void start(Context context, String fragmentName, Bundle bundle, boolean isShowAnim) {
-        LogUtil.d("fragmentName:" + fragmentName);
+        VLog.d("fragmentName:" + fragmentName);
         if (context != null) {
             Intent it = new Intent();
             it.setClass(context, ContainerActivity.class);

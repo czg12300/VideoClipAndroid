@@ -1,4 +1,4 @@
-package com.jake.ffmpegandroid.cameraimp;
+package com.jake.ffmpegandroid.record.camera;
 
 import android.Manifest;
 import android.content.Context;
@@ -10,7 +10,6 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
@@ -18,7 +17,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
@@ -27,7 +25,7 @@ import android.text.TextUtils;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
-import com.jake.ffmpegandroid.common.LogUtil;
+import com.jake.ffmpegandroid.common.VLog;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -147,8 +145,8 @@ public class Camera2 implements CameraImp {
             List<Size> pictureSizes = CameraUtils.transArrayToList(map.getOutputSizes(pictureFormat));
             mPictureSize = CameraUtils.getLargeSize(pictureSizes, mPictureSize.width, mPictureSize.height);
         }
-        List<Surface> surfaceList = new ArrayList<>();
         mPreviewBuilder = mDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+        List<Surface> surfaceList = new ArrayList<>();
         if (mPreviewSurfaceTexture != null) {
             mPreviewSurfaceTexture.setDefaultBufferSize(mPreviewSize.width, mPreviewSize.height);
             Surface textureSurface = new Surface(mPreviewSurfaceTexture);
@@ -175,7 +173,7 @@ public class Camera2 implements CameraImp {
             mPreviewBuilder.addTarget(mPreviewImageReader.getSurface());
             surfaceList.add(mPreviewImageReader.getSurface());
         }
-        setZoom(0);
+        setZoom(0, false);
         updateAutoFocus(characteristics);
         if (surfaceList != null) {
             mDevice.createCaptureSession(surfaceList, mCaptureSessionStateCallback, mThreadHandler);
@@ -266,7 +264,7 @@ public class Camera2 implements CameraImp {
             return;
         }
         if (ActivityCompat.checkSelfPermission(mAppContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            LogUtil.e("没有照相机权限");
+            VLog.e("没有照相机权限");
             return;
         }
         stopCamera();
@@ -294,7 +292,7 @@ public class Camera2 implements CameraImp {
             mCameraCaptureSession.stopRepeating();
             mCameraCaptureSession.capture(mPreviewBuilder.build(), mCaptureCallback, mThreadHandler);
         } catch (CameraAccessException e) {
-            LogUtil.e("Cannot capture a still picture." + e.getMessage());
+            VLog.e("Cannot capture a still picture." + e.getMessage());
         }
     }
 
@@ -364,7 +362,7 @@ public class Camera2 implements CameraImp {
                 CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCurrentCameraId);
                 Float distance = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
                 if (distance != null) {
-                    LogUtil.d("max zoom :" + distance);
+                    VLog.d("max zoom :" + distance);
                     return distance.intValue();
                 }
             } catch (CameraAccessException e) {
@@ -376,6 +374,10 @@ public class Camera2 implements CameraImp {
 
     @Override
     public void setZoom(int zoom) {
+        setZoom(zoom, true);
+    }
+
+    private void setZoom(int zoom, boolean isStartPreview) {
         if (isCameraOpen()) {
             try {
                 CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCurrentCameraId);
@@ -386,10 +388,13 @@ public class Camera2 implements CameraImp {
                     } else if (zoom < 0) {
                         zoom = 0;
                     }
-                    mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
+//                    mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
                     mPreviewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, Integer.valueOf(zoom).floatValue());
                 }
-                updateAutoFocus(characteristics);
+//                updateAutoFocus(characteristics);
+                if (isStartPreview) {
+                    startPreview();
+                }
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
@@ -404,7 +409,7 @@ public class Camera2 implements CameraImp {
                 Float distance = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
                 if (distance != null) {
                     distance = mPreviewBuilder.get(CaptureRequest.LENS_FOCUS_DISTANCE);
-                    LogUtil.d(" zoom :" + distance);
+                    VLog.d(" zoom :" + distance);
                     return distance.intValue();
                 }
             } catch (CameraAccessException e) {
@@ -424,7 +429,7 @@ public class Camera2 implements CameraImp {
                 if (zoom > max) {
                     zoom = max;
                 }
-                setZoom(zoom);
+                setZoom(zoom, true);
                 return true;
             }
 
@@ -442,7 +447,7 @@ public class Camera2 implements CameraImp {
                 if (zoom < 0) {
                     zoom = 0;
                 }
-                setZoom(zoom);
+                setZoom(zoom, true);
                 return true;
             }
 

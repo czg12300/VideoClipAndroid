@@ -1,18 +1,15 @@
 package com.jake.ffmpegandroid.camera;
 
-import android.app.Activity;
-import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLSurfaceView;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.ViewGroup;
 
-import com.jake.ffmpegandroid.cameraimp.CameraImp;
-import com.jake.ffmpegandroid.cameraimp.CameraImpFactory;
-import com.jake.ffmpegandroid.cameraimp.CameraUtils;
-import com.jake.ffmpegandroid.common.LogUtil;
+import com.jake.ffmpegandroid.record.camera.CameraImp;
+import com.jake.ffmpegandroid.record.camera.CameraImpFactory;
+import com.jake.ffmpegandroid.record.camera.CameraUtils;
+import com.jake.ffmpegandroid.common.VLog;
 import com.jake.ffmpegandroid.gpuimage.FilterFactory;
 import com.jake.ffmpegandroid.gpuimage.FilterType;
 
@@ -34,7 +31,7 @@ public class GlCameraHolder {
                 .setPictureSize(new CameraImp.Size(1080, 1920))
                 .setPreviewSize(new CameraImp.Size(640, 480))
                 .setPictureFormat(ImageFormat.JPEG)
-                .setPreviewFormat(ImageFormat.YV12)
+                .setPreviewFormat(ImageFormat.NV21)
                 .build());
         mOrientation = Surface.ROTATION_0;
         mCameraImp.setCameraImpCallback(cameraImpCallback);
@@ -54,7 +51,7 @@ public class GlCameraHolder {
     private CameraImp.CameraImpCallback cameraImpCallback = new CameraImp.CameraImpCallback() {
         @Override
         public void onCameraOpened(final CameraImp cameraImp, final int width, final int height) {
-            LogUtil.d("width:height =" + width + ":" + height);
+            VLog.d("width:height =" + width + ":" + height);
             mGLSurfaceView.post(new Runnable() {
                 @Override
                 public void run() {
@@ -72,7 +69,7 @@ public class GlCameraHolder {
                         glHeight = sw * height / width;
                     }
 //                            }
-                    LogUtil.d("width:height =" + glWidth + ":" + glHeight);
+                    VLog.d("width:height =" + glWidth + ":" + glHeight);
                     ViewGroup.LayoutParams lp = mGLSurfaceView.getLayoutParams();
                     lp.width = glWidth;
                     lp.height = glHeight;

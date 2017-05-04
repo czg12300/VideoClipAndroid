@@ -1,9 +1,9 @@
-package com.jake.ffmpegandroid.cameraimp;
+package com.jake.ffmpegandroid.record.camera;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.system.Os;
 
 /**
  * 用于创建摄像头实现的实例
@@ -13,15 +13,15 @@ import android.system.Os;
  */
 
 public final class CameraImpFactory {
-    static boolean useCamera2 = true;
+    static boolean useCamera2 = false;
 
     private CameraImpFactory() {
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static final CameraImp getCameraImp(Context context) {
         CameraImp cameraImp = null;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP||!useCamera2) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || !useCamera2) {
             cameraImp = new Camera1(context);
         } else {
             cameraImp = new Camera2(context);

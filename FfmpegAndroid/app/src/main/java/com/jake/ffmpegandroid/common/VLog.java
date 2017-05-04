@@ -7,7 +7,7 @@ import android.util.Log;
  * 
  * @author chenys
  */
-public class LogUtil {
+public class VLog {
 
     private static final String TAG = "xiuge_log";
 

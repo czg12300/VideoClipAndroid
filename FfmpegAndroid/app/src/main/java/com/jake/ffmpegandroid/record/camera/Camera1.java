@@ -1,4 +1,4 @@
-package com.jake.ffmpegandroid.cameraimp;
+package com.jake.ffmpegandroid.record.camera;
 
 import android.Manifest;
 import android.content.Context;
@@ -7,14 +7,11 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.support.v4.app.ActivityCompat;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 
-import com.jake.ffmpegandroid.camera.BaseCameraHolder;
-import com.jake.ffmpegandroid.common.LogUtil;
+import com.jake.ffmpegandroid.common.VLog;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -54,9 +51,9 @@ public class Camera1 implements CameraImp {
 
     private void init() {
         int num = Camera.getNumberOfCameras();
-        LogUtil.d("num=" + num);
-        LogUtil.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
-        LogUtil.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
+        VLog.d("num=" + num);
+        VLog.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
+        VLog.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
         if (num > 0) {
             hasAvailableCamera = true;
             for (int i = 0; i < num; i++) {
@@ -71,8 +68,8 @@ public class Camera1 implements CameraImp {
         } else {
             hasAvailableCamera = false;
         }
-        LogUtil.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
-        LogUtil.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
+        VLog.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
+        VLog.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
     }
 
 
@@ -86,7 +83,7 @@ public class Camera1 implements CameraImp {
             return;
         }
         if (ActivityCompat.checkSelfPermission(mAppContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            LogUtil.e("没有照相机权限");
+            VLog.e("没有照相机权限");
             return;
         }
         if (mCamera != null) {
@@ -157,7 +154,7 @@ public class Camera1 implements CameraImp {
                 if (num[0] > range[0]) {
                     range[0] = num[0];
                     range[1] = num[1];
-                    LogUtil.d("fpsList " + num[0] + " : " + num[1]);
+                    VLog.d("fpsList " + num[0] + " : " + num[1]);
                 }
             }
             parameters.setPreviewFpsRange(range[0], range[1]);

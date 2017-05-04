@@ -1,14 +1,12 @@
 package com.jake.ffmpegandroid.camera;
 
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Looper;
-import android.view.Surface;
 
 
-import com.jake.ffmpegandroid.common.LogUtil;
+import com.jake.ffmpegandroid.common.VLog;
 import com.jake.ffmpegandroid.gpuimage.OpenGlUtils;
 import com.jake.ffmpegandroid.gpuimage.Rotation;
 import com.jake.ffmpegandroid.gpuimage.TextureRotationUtil;
@@ -94,7 +92,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             tag = "当前是在主线程";
         }
-        LogUtil.d("CameraRenderer " + tag);
+//        VLog.d("CameraRenderer " + tag);
     }
 
     @Override
@@ -156,7 +154,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     }
 
     public void updateRotation(int orientation, boolean isFacingFront) {
-        LogUtil.d("displayDegree updateRotation=" + orientation);
+        VLog.d("displayDegree updateRotation=" + orientation);
         if (isFacingFront) {
             if (orientation == 270) {
                 orientation = 90;
@@ -176,7 +174,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         long now = System.currentTimeMillis();
         if (now - lastTime > 1000) {
             lastTime = now;
-            LogUtil.d("当前帧率：" + frameRate);
+//            VLog.d("当前帧率：" + frameRate);
 
             frameRate = 1;
         } else {

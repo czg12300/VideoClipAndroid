@@ -1,17 +1,16 @@
-package com.jake.ffmpegandroid.cameraimp;
+package com.jake.ffmpegandroid.record.camera;
 
 
 import android.hardware.Camera;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.view.Surface;
 
+import com.jake.ffmpegandroid.record.camera.CameraImp.Size;
+import com.jake.ffmpegandroid.common.VLog;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.jake.ffmpegandroid.cameraimp.CameraImp.Size;
-import com.jake.ffmpegandroid.common.LogUtil;
 
 /**
  * 一些camera相关的简单的工具
@@ -22,7 +21,7 @@ import com.jake.ffmpegandroid.common.LogUtil;
 
 public final class CameraUtils {
     public static int getDegreesByOrientation(int orientation, CameraImp cameraImp) {
-        LogUtil.d("orientation=" + orientation);
+        VLog.d("orientation=" + orientation);
         int degrees = 0;
         if (cameraImp instanceof Camera2) {
             switch (orientation) {

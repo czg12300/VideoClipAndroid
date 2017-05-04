@@ -1,22 +1,26 @@
 package com.jake.ffmpegandroid.ui;
 
 import android.content.res.Configuration;
-import android.hardware.Camera;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.jake.ffmpegandroid.R;
-import com.jake.ffmpegandroid.camera.CameraRenderer;
 import com.jake.ffmpegandroid.camera.GlCameraHolder;
-import com.jake.ffmpegandroid.cameraimp.CameraImp;
+import com.jake.ffmpegandroid.record.camera.CameraImp;
 import com.jake.ffmpegandroid.common.BaseWorkerFragment;
-import com.jake.ffmpegandroid.common.LogUtil;
+import com.jake.ffmpegandroid.common.VLog;
+import com.jake.ffmpegandroid.record.VideoRecord;
+import com.jake.ffmpegandroid.record.videocodec.VideoCodecParameters;
+
+import java.io.File;
 
 /**
  * 拍摄页面
@@ -32,6 +36,8 @@ public class CameraFragment extends BaseWorkerFragment {
     private GLSurfaceView mGlPreview;
     private GlCameraHolder mCameraHolder;
     private TextView mTvFrameRate;
+    private VideoRecord mVideoRecord;
+    private int state = 0;
 
     @Nullable
     @Override
@@ -63,6 +69,7 @@ public class CameraFragment extends BaseWorkerFragment {
         mBtnFlash.setOnClickListener(onClickListener);
         mCameraHolder = new GlCameraHolder(mGlPreview);
         mCameraHolder.setPreviewCallback(previewCallback);
+        mVideoRecord = new VideoRecord();
     }
 
     long lastTime;
@@ -70,17 +77,34 @@ public class CameraFragment extends BaseWorkerFragment {
     private CameraImp.PreviewCallback previewCallback = new CameraImp.PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, int width, int height, CameraImp cameraImp) {
+            if (state == 1) {
+                mVideoRecord.setVideoCodecParameters(VideoCodecParameters.VideoCodecParametersBuilder.create()
+                        .setCodecType(VideoCodecParameters.CodecType.H264)
+                        .setBitRate(2 * 1024 * 1024)
+                        .setFrameRate(25)
+                        .setKeyIFrameInterval(1)
+                        .setWidth(width)
+                        .setHeight(height)
+                        .build());
+                mVideoRecord.start(getTempFile());
+                state = 2;
+            } else if (state == 2) {
+                mVideoRecord.record(data, width, height, System.currentTimeMillis());
+            } else if (state == 3) {
+                mVideoRecord.pause();
+                state = 0;
+            } else if (state == 4) {
+                mVideoRecord.resume();
+                state = 0;
+            } else if (state == 5) {
+                mVideoRecord.stop();
+                state = 0;
+            }
             long now = System.currentTimeMillis();
             if (now - lastTime > 1000) {
                 lastTime = now;
-//                mTvFrameRate.post(new Runnable() {
-//                    @Override
-//                    public void run() {
-                        mTvFrameRate.setText("帧率：" + frameRate);
-//                    }
-//                });
-
-                LogUtil.d("onPreviewFrame frame rate=" + frameRate + "data len=" + data.length + " width=" + width + " height=" + height);
+                mTvFrameRate.setText("帧率：" + frameRate);
+//                VLog.d("onPreviewFrame frame rate=" + frameRate + "data len=" + data.length + " width=" + width + " height=" + height);
                 frameRate = 1;
             } else {
                 frameRate++;
@@ -88,16 +112,28 @@ public class CameraFragment extends BaseWorkerFragment {
         }
     };
 
+    private String getTempFile() {
+        return new File(Environment.getExternalStorageDirectory(), "AAAAA/out.h264").getAbsolutePath();
+    }
+
+    private long lastStartTime;
     private View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             if (v == mBtnCamera) {
                 if (mBtnCamera.isSelected()) {
+                    state = 5;
                     mBtnCamera.setSelected(false);
                     mBtnCamera.setImageResource(android.R.drawable.ic_menu_camera);
+                    long now = System.currentTimeMillis();
+                    Toast.makeText(v.getContext(), "视频长度为" + (now - lastStartTime) / 1000 + " s", Toast.LENGTH_LONG).show();
+                    lastStartTime = now;
+
                 } else {
                     mBtnCamera.setImageResource(android.R.drawable.ic_media_pause);
                     mBtnCamera.setSelected(true);
+                    state = 1;
+                    lastStartTime = System.currentTimeMillis();
                 }
             } else if (v == mBtnToggle) {
                 mCameraHolder.toggleCamera();

@@ -1,4 +1,4 @@
-package com.jake.ffmpegandroid.cameraimp;
+package com.jake.ffmpegandroid.record.camera;
 
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;

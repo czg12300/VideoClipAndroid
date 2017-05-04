@@ -1,11 +1,10 @@
 package com.jake.ffmpegandroid.camera;
 
-import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.view.Surface;
 
 
-import com.jake.ffmpegandroid.common.LogUtil;
+import com.jake.ffmpegandroid.common.VLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +48,9 @@ public abstract class BaseCameraHolder {
      */
     static {
         int num = Camera.getNumberOfCameras();
-        LogUtil.d("num=" + num);
-        LogUtil.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
-        LogUtil.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
+        VLog.d("num=" + num);
+        VLog.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
+        VLog.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
         for (int i = 0; i < num; i++) {
             Camera.CameraInfo info = new Camera.CameraInfo();
             Camera.getCameraInfo(i, info);
@@ -61,8 +60,8 @@ public abstract class BaseCameraHolder {
                 CAMERA_ID_FRONT = i;
             }
         }
-        LogUtil.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
-        LogUtil.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
+        VLog.d("CAMERA_ID_BACK=" + CAMERA_ID_BACK);
+        VLog.d("CAMERA_ID_FRONT=" + CAMERA_ID_FRONT);
     }
 
     /**
@@ -177,7 +176,7 @@ public abstract class BaseCameraHolder {
                 if (num[0] > range[0]) {
                     range[0] = num[0];
                     range[1] = num[1];
-                    LogUtil.d("fpsList " + num[0] + " : " + num[1]);
+                    VLog.d("fpsList " + num[0] + " : " + num[1]);
                 }
             }
             mCameraParameters.setPreviewFpsRange(range[0], range[1]);
